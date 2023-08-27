@@ -10,8 +10,11 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,6 +25,7 @@ public class MainActivity extends CameraActivity {
     // difference between and rgb image to print noise to
     Mat current, previous, difference, rgb;
     boolean isInit;
+    List<MatOfPoint> contours;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +45,7 @@ public class MainActivity extends CameraActivity {
                 previous = new Mat();
                 rgb = new Mat();
                 difference = new Mat();
+                contours = new ArrayList<>();
             }
 
             @Override
@@ -70,12 +75,19 @@ public class MainActivity extends CameraActivity {
                         100,
                         255,
                         Imgproc.THRESH_BINARY);
+                Imgproc.findContours(
+                        difference,
+                        contours,
+                        new Mat(),
+                        Imgproc.RETR_TREE,
+                        Imgproc.CHAIN_APPROX_SIMPLE);
+                Imgproc.drawContours(rgb, contours, -1, new Scalar(128, 0, 128));
 
                 // Set current frame as previous
                 previous = current.clone();
 
                 // cast input frame to Mat
-                return difference;
+                return rgb;
             }
         });
 

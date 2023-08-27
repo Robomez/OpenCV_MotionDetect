@@ -11,6 +11,7 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
@@ -72,7 +73,7 @@ public class MainActivity extends CameraActivity {
                 Imgproc.threshold(
                         difference,
                         difference,
-                        100,
+                        40,
                         255,
                         Imgproc.THRESH_BINARY);
                 Imgproc.findContours(
@@ -81,12 +82,18 @@ public class MainActivity extends CameraActivity {
                         new Mat(),
                         Imgproc.RETR_TREE,
                         Imgproc.CHAIN_APPROX_SIMPLE);
-                Imgproc.drawContours(rgb, contours, -1, new Scalar(128, 0, 128));
+                // Imgproc.drawContours(rgb, contours, -1, new Scalar(128, 0, 128), 4);
+                for (MatOfPoint m : contours) {
+                    Rect rectangle = Imgproc.boundingRect(m);
+                    Imgproc.rectangle(rgb, rectangle, new Scalar(255, 255, 0), 4);
+                }
+
+                contours.clear();
 
                 // Set current frame as previous
                 previous = current.clone();
 
-                // cast input frame to Mat
+                // Return what to show on screen
                 return rgb;
             }
         });

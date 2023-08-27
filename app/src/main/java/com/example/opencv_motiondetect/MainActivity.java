@@ -8,7 +8,9 @@ import android.util.Log;
 import org.opencv.android.CameraActivity;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,6 +18,10 @@ import java.util.List;
 public class MainActivity extends CameraActivity {
 
     CameraBridgeViewBase cameraBridgeViewBase;
+    // Matrices for current frame(gray sc), previous frame(gray sc),
+    // difference between and rgb image to print noise to
+    Mat current, previous, difference, rgb;
+    boolean isInit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,11 +30,17 @@ public class MainActivity extends CameraActivity {
 
         getPermission();
 
+        isInit = false;
+
         cameraBridgeViewBase = findViewById(R.id.cameraView);
         cameraBridgeViewBase.setCvCameraViewListener(new CameraBridgeViewBase.CvCameraViewListener2() {
             @Override
             public void onCameraViewStarted(int width, int height) {
-
+                // Initialise matrices
+                current = new Mat();
+                previous = new Mat();
+                rgb = new Mat();
+                difference = new Mat();
             }
 
             @Override
@@ -39,8 +51,31 @@ public class MainActivity extends CameraActivity {
             // When a frame is captured by android camera
             @Override
             public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+                // First frame set previous
+                if (!isInit) {
+                    previous = inputFrame.gray();
+                    isInit = true;
+                    return previous;
+                }
+
+                rgb = inputFrame.rgba();
+                current = inputFrame.gray();
+
+                // Detect noises
+                Core.absdiff(current, previous, difference);
+                // Divide pixel values to 0 or 1. If value > 100 -> 1, else 0
+                Imgproc.threshold(
+                        difference,
+                        difference,
+                        100,
+                        255,
+                        Imgproc.THRESH_BINARY);
+
+                // Set current frame as previous
+                previous = current.clone();
+
                 // cast input frame to Mat
-                return inputFrame.rgba();
+                return difference;
             }
         });
 
@@ -71,6 +106,7 @@ public class MainActivity extends CameraActivity {
             requestPermissions(new String[]{Manifest.permission.CAMERA}, 3);
         }
     }
+
     @Override
     public void onRequestPermissionsResult(
             int requestCode,

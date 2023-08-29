@@ -1,125 +1,69 @@
 package com.example.opencv_motiondetect;
 
+import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.Manifest;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.SurfaceView;
 
+import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraActivity;
 import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.JavaCameraView;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+public class MainActivity extends CameraActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
-public class MainActivity extends CameraActivity {
+    JavaCameraView javaCameraView;
+    Mat mRGBA, mRGBAT;
 
-    CameraBridgeViewBase cameraBridgeViewBase;
-    // Matrices for current frame(gray sc), previous frame(gray sc),
-    // difference between and rgb image to print noise to
-    Mat current, previous, difference, rgb;
-    boolean isInit;
-    List<MatOfPoint> contours;
+    BaseLoaderCallback baseLoaderCallback = new BaseLoaderCallback(MainActivity.this) {
+        @Override
+        public void onManagerConnected(int status) {
+            if (status == BaseLoaderCallback.SUCCESS) {
+                javaCameraView.enableView();
+            } else {
+                super.onManagerConnected(status);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        getPermission();
+        // getPermission();
 
-        isInit = false;
-
-        cameraBridgeViewBase = findViewById(R.id.cameraView);
-        cameraBridgeViewBase.setCvCameraViewListener(new CameraBridgeViewBase.CvCameraViewListener2() {
-            @Override
-            public void onCameraViewStarted(int width, int height) {
-                // Initialise matrices
-                current = new Mat();
-                previous = new Mat();
-                rgb = new Mat();
-                difference = new Mat();
-                contours = new ArrayList<>();
-            }
-
-            @Override
-            public void onCameraViewStopped() {
-
-            }
-
-            // When a frame is captured by android camera
-            @Override
-            public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-                // First frame set previous
-                if (!isInit) {
-                    previous = inputFrame.gray();
-                    isInit = true;
-                    return previous;
-                }
-
-                rgb = inputFrame.rgba();
-                current = inputFrame.gray();
-
-                // Detect noises
-                Core.absdiff(current, previous, difference);
-                // Divide pixel values to 0 or 1. If value > 100 -> 1, else 0
-                Imgproc.threshold(
-                        difference,
-                        difference,
-                        40,
-                        255,
-                        Imgproc.THRESH_BINARY);
-                Imgproc.findContours(
-                        difference,
-                        contours,
-                        new Mat(),
-                        Imgproc.RETR_TREE,
-                        Imgproc.CHAIN_APPROX_SIMPLE);
-                // Imgproc.drawContours(rgb, contours, -1, new Scalar(128, 0, 128), 4);
-                for (MatOfPoint m : contours) {
-                    Rect rectangle = Imgproc.boundingRect(m);
-                    Imgproc.rectangle(rgb, rectangle, new Scalar(255, 255, 0), 4);
-                }
-
-                contours.clear();
-
-                // Set current frame as previous
-                previous = current.clone();
-
-                // Return what to show on screen
-                return rgb;
-            }
-        });
-
-        if (OpenCVLoader.initDebug()) {
-            Log.d("OPENCVLOAD", "success");
-        } else {
-            Log.d("OPENCVLOAD", "error");
-        }
-        cameraBridgeViewBase.enableView();
+        javaCameraView = findViewById(R.id.camera_view);
+        javaCameraView.setVisibility(SurfaceView.VISIBLE);
+        javaCameraView.setCvCameraViewListener(MainActivity.this);
+        javaCameraView.setCameraPermissionGranted();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        cameraBridgeViewBase.enableView();
+        testCVLoad();
+
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        cameraBridgeViewBase.disableView();
+        if (javaCameraView != null) {
+            javaCameraView.disableView();
+        }
     }
 
     // В современных версиях Android нет нужды проверять, он сам проверяет
-    void getPermission() {
+ /*   void getPermission() {
         if (checkSelfPermission(Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.CAMERA}, 3);
@@ -135,10 +79,36 @@ public class MainActivity extends CameraActivity {
         if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
             getPermission();
         }
+    }*/
+
+    @Override
+    public void onCameraViewStarted(int width, int height) {
+        mRGBA = new Mat(height, width, CvType.CV_8UC4);
     }
 
     @Override
-    protected List<? extends CameraBridgeViewBase> getCameraViewList() {
-        return Collections.singletonList(cameraBridgeViewBase);
+    public void onCameraViewStopped() {
+        mRGBA.release();
+    }
+
+    @Override
+    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+        mRGBA = inputFrame.rgba();
+        return mRGBA;
+    }
+
+    @Override
+    public void onPointerCaptureChanged(boolean hasCapture) {
+        super.onPointerCaptureChanged(hasCapture);
+    }
+
+    public void testCVLoad() {
+        if (OpenCVLoader.initDebug()) {
+            Log.d("OPENCVLOAD", "successful OpenCV load");
+            baseLoaderCallback.onManagerConnected(BaseLoaderCallback.SUCCESS);
+        } else {
+            Log.d("OPENCVLOAD", "error loading OpenCV");
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, this, baseLoaderCallback);
+        }
     }
 }

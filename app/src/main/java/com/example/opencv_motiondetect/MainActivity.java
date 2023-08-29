@@ -1,9 +1,5 @@
 package com.example.opencv_motiondetect;
 
-import android.app.Activity;
-import android.content.pm.PackageManager;
-import android.Manifest;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
@@ -14,14 +10,15 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.JavaCameraView;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
+import org.opencv.video.BackgroundSubtractorMOG2;
+import org.opencv.video.Video;
 
 public class MainActivity extends CameraActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
+    BackgroundSubtractorMOG2 backSub;
     JavaCameraView javaCameraView;
-    Mat mRGBA, mRGBAT;
+    Mat frame, subMask;
 
     BaseLoaderCallback baseLoaderCallback = new BaseLoaderCallback(MainActivity.this) {
         @Override
@@ -83,18 +80,23 @@ public class MainActivity extends CameraActivity implements CameraBridgeViewBase
 
     @Override
     public void onCameraViewStarted(int width, int height) {
-        mRGBA = new Mat(height, width, CvType.CV_8UC4);
+        frame = new Mat();
+        subMask = new Mat();
+        backSub = Video.createBackgroundSubtractorMOG2();
     }
 
     @Override
     public void onCameraViewStopped() {
-        mRGBA.release();
+        frame.release();
     }
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        mRGBA = inputFrame.rgba();
-        return mRGBA;
+        frame = inputFrame.gray().t();
+        Core.flip(frame, frame, 1);
+        backSub.apply(frame, subMask);
+
+        return subMask;
     }
 
     @Override

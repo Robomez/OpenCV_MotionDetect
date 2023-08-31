@@ -25,7 +25,6 @@ import java.util.List;
 public class CameraActivity extends org.opencv.android.CameraActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
     JavaCameraView javaCameraView;
-
     BackgroundSubtractorMOG2 backSub;
     BackgroundSubtractorKNN backSubKNN;
     Mat frame, subMask, frameResult;
@@ -70,8 +69,6 @@ public class CameraActivity extends org.opencv.android.CameraActivity implements
         backSub.clear();
         backSubKNN.clear();
     }
-
-
 
     @Override
     public void onCameraViewStarted(int width, int height) {

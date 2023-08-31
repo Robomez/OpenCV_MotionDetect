@@ -3,10 +3,12 @@ package com.example.opencv_motiondetect;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.Manifest;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
@@ -17,14 +19,32 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        getPermission();
+
         buttonCamera = findViewById(R.id.button_camera);
         buttonFile = findViewById(R.id.button_file);
         buttonCamera.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, CameraActivity.class);
             startActivity(intent);
         });
+        buttonFile.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            startActivityForResult(intent, 1);
+        });
 
-        getPermission();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1 && data != null) {
+            String selectedVideoUriPath = data.getData().getPath();
+            Intent intent = new Intent(MainActivity.this, FileActivity.class);
+            intent.putExtra("PATH", selectedVideoUriPath);
+            startActivity(intent);
+        }
     }
 
     // В современных версиях Android нет нужды проверять доступ, он сам проверяет

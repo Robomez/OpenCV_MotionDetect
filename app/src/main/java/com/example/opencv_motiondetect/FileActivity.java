@@ -1,5 +1,6 @@
 package com.example.opencv_motiondetect;
 
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
@@ -7,6 +8,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
+
+import com.arthenica.ffmpegkit.FFmpegKit;
+import com.arthenica.ffmpegkit.FFmpegSession;
+import com.arthenica.ffmpegkit.ReturnCode;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.OpenCVLoader;
@@ -39,8 +44,6 @@ public class FileActivity extends AppCompatActivity {
 
         textView = findViewById(R.id.textView);
 
-
-
         testCVLoad();
     }
 
@@ -48,19 +51,35 @@ public class FileActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        videoCapture = new VideoCapture();
+        //videoCapture = new VideoCapture();
 
-        Intent intent = getIntent();
-        String path = intent.getStringExtra("PATH");
+        /* Чтобы использовать VideoCapture, нужно конвертировать файл видео в mjpeg
+        в контейнере avi. Иначе OpenCV на андроиде его не поймёт.
+        Для этого используется FFmpeg библиотека. Её можно взять отдельно уже собранным модулем
+        или собрать OpenCV с поддержкой FFmpeg. Тут взято отдельно библиотека mobile_ffmpeg.
+         */
 
+        String fileName = "/storage/emulated/0/Download/sample.mp4";
+        String mjpegFileName = "/storage/emulated/0/Download/outputMjpeg.mjpeg";
+        String aviFileName = "/storage/emulated/0/Download/outputAvi.avi";
 
-        videoCapture.open(path, Videoio.CAP_ANDROID);
-        if (!videoCapture.isOpened()) {
-            textView.setText("Video failed to open");
-            Log.d("VIDEOCAPTURE", "Video failed to open");
+        FFmpegSession session = FFmpegKit.execute("-i" + fileName + " -vcodec mjpeg " + mjpegFileName);
+        //session = FFmpegKit.execute("-i " + mjpegFileName + " -vcodec " + aviFileName);
+
+        if(ReturnCode.isSuccess(session.getReturnCode())) {
+            Log.i("FFMPEG", "Command execution completed successfully");
+        } else if (ReturnCode.isCancel(session.getReturnCode())) {
+            Log.i("FFMPEG", "Command execution cancelled by user");
         } else {
-            textView.setText("Video opened OK");
-            Log.d("VIDEOCAPTURE", "Video opened OK");
+            Log.i("FFMPEG", String.format("Command failed with state %s and rc %s.%s", session.getState(), session.getReturnCode(), session.getFailStackTrace()));
+
+            videoCapture.open(mjpegFileName);
+
+            if (videoCapture.isOpened()) {
+                Log.d("VIDEOCAPTURE", "Video opened OK");
+            } else {
+                Log.d("VIDEOCAPTURE", "Video open FAILED");
+            }
         }
     }
 

@@ -28,23 +28,10 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
         buttonFile.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("*/*");
-            startActivityForResult(intent, 1);
+            Intent intent = new Intent(MainActivity.this, FileActivity.class);
+            startActivity(intent);
         });
 
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && data != null) {
-            String selectedVideoUriPath = data.getData().getPath();
-            Intent intent = new Intent(MainActivity.this, FileActivity.class);
-            intent.putExtra("PATH", selectedVideoUriPath);
-            startActivity(intent);
-        }
     }
 
     // В современных версиях Android нет нужды проверять доступ, он сам проверяет

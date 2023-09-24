@@ -6,6 +6,13 @@ android {
     namespace 'com.example.opencv_motiondetect'
     compileSdk 33
 
+    packagingOptions {
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+    }
+
     defaultConfig {
         applicationId "com.example.opencv_motiondetect"
         minSdk 29
@@ -37,4 +44,7 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+
+    //implementation 'com.arthenica:mobile-ffmpeg-full:4.4'
+    implementation 'com.arthenica:ffmpeg-kit-full:5.1'
 }

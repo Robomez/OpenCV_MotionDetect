@@ -1,3 +1,5 @@
+# OpenCV MotionDetect
+
 ![Example](videoexample.gif)
 
 Приложение считывает картинку с камеры и обнаруживает на ней движущиеся предметы. 
